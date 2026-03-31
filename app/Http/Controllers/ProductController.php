@@ -45,6 +45,57 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Product Added!');
     }
 
+    // --- الدالتين اللي كانوا ناقصين (Edit & Update) ---
+
+    public function edit($id)
+    {
+        $product = Product::findOrFail($id);
+        $categories = Category::all();
+        return view('products.edit', compact('product', 'categories'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required|numeric',
+            'category_id' => 'required',
+            'image' => 'nullable|image|max:2048'
+        ]);
+
+        if ($request->hasFile('image')) {
+            // حذف الصورة القديمة لو موجودة
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $imagePath = $request->file('image')->store('products', 'public');
+            $product->image = $imagePath;
+        }
+
+        $product->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'category_id' => $request->category_id,
+            'stock' => $request->stock ?? 0,
+        ]);
+
+        return redirect()->route('products.index')->with('success', 'Product Updated Successfully!');
+    }
+
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+        $product->delete();
+        return redirect()->route('products.index')->with('success', 'Product Deleted!');
+    }
+
     // --- Shopping Cart Logic (The Core) ---
     public function addToCart($id)
     {
@@ -107,6 +158,7 @@ class ProductController extends Controller
         session()->forget('cart');
         return redirect()->route('home')->with('success', 'Order Placed Successfully!');
     }
+
     public function about()
     {
         return view('about');
