@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // --- Admin Dashboard Functions ---
     public function index()
     {
         $products = Product::with("category")->latest()->get();
